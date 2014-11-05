@@ -1,0 +1,192 @@
+*********************************************************************
+* Unit test driver for REGEX parser.                                *
+*********************************************************************
+         TITLE 'TEST REGEX PARSER'
+
+         MACRO
+         TESTCASE &DESCR,&LEN
+         AP    TOTAL,=P'1'
+         MVC   TESTNBR,MASK
+         ED    TESTNBR,TOTAL
+         MVI   TESTDESC,C' '
+         MVC   TESTDESC+1(L'TESTDESC-1),TESTDESC
+         MVC   TESTDESC(&LEN),=C&DESCR
+         MVC   TESTRES,=C'      '
+         MVC   RESULT,=C'                        '
+         MEND
+
+         MACRO
+         FAILED 
+         AP    FAILCNT,=P'1'
+         LA    R8,FAILLEN
+         STH   R8,WTOLENG
+         MVC   TESTRES,FAILED
+         WTO   MF=(E,TESTMSG)
+         MVC   WTOTEXT,EXPMSG
+         WTO   MF=(E,WTOBLOCK)
+         MVC   ACTUAL,RESULT
+         MVC   WTOTEXT,ACTMSG
+         WTO   MF=(E,WTOBLOCK)
+         MEND
+
+         MACRO
+         PASSED
+         AP    PASSCNT,=P'1'
+         MVC   TESTRES,PASSED
+         WTO   MF=(E,TESTMSG)
+         MEND
+
+         MACRO
+         STATS
+         WTO   '*------------------------------*'
+         MVC   TOTALZ,MASK
+         ED    TOTALZ,TOTAL
+         MVC   FAILCNTZ,MASK
+         ED    FAILCNTZ,FAILCNT
+         MVC   PASSCNTZ,MASK
+         ED    PASSCNTZ,PASSCNT
+         WTO   MF=(E,TOTLMSG)
+         WTO   MF=(E,PASSMSG)
+         WTO   MF=(E,FAILMSG)
+         WTO   '*------------------------------*'
+         MEND
+
+         MACRO
+         SETVAL &TARG,&VAL,&LEN
+         XC &TARG,&TARG
+         LA    R2,&TARG
+         LA    R3,&VAL
+         MVC   0(&LEN,R2),0(R3)
+         MEND
+
+
+REGEXT   CSECT
+         SAVE  (14,12)
+         BALR  12,0              PREPARE A BASE REGISTER
+         USING *,12              ESTABLISH BASE REGISTER
+         ST    R13,SAVREG13
+         LA    R13,SAVEAREA
+
+         WTO   'Starting REGEX parser tests...'
+         WTO   '*------------------------------*'
+*-------------------------------------------------------------------*
+         TESTCASE 'String not matched',18
+
+         SETVAL PATTERN,=C'test value',10
+         SETVAL STRING,=C'aardvaark',9
+         SETVAL EXPECTED,=C' ',1
+
+         CALL  REGEX,(PATTERN,STRING,RESULT),VL
+
+         CLI   RESULT,X'00'
+         BE    T1PASS
+         FAILED
+         B     T2
+T1PASS   EQU   *
+         PASSED
+*-------------------------------------------------------------------*
+T2       EQU   *
+         TESTCASE 'Exact string match',18
+
+         SETVAL PATTERN,=C'test value',10
+         SETVAL STRING,=C'test value',10
+         SETVAL EXPECTED,=C'test value',10
+
+         CALL  REGEX,(PATTERN,STRING,RESULT),VL
+
+         CLC   RESULT(10),EXPECTED
+         BE    T2PASS
+         FAILED
+         B     ENDOK
+T2PASS   EQU   *
+         PASSED
+*---------------------------------------------------------------------*
+ENDOK    EQU   *
+         STATS
+         L     R13,SAVREG13
+         RETURN (14,12),RC=0
+ABEND08  EQU   *
+         L     R13,SAVREG13
+         RETURN (14,12),RC=8
+*---------------------------------------------------------------------*
+         DS    0D            
+SAVEAREA EQU   *
+         DC    F'0'
+         DC    F'0'
+SAVREG13 DC    F'0'
+         DC    15F'0'     
+*
+WTOBLOCK EQU   *
+WTOLENG  DC    H'0'       
+         DC    H'0'                     
+WTOTEXT  DC    CL76' '
+
+PATTERN  DS    CL60
+STRING   DS    CL60
+RESULT   DS    CL60         
+
+EXPMSG   DS   0D
+         DC    CL11' Expected: '
+EXPECTED DC    CL60' '
+
+ACTMSG   DS   0D
+         DC    CL11'   Actual: '
+ACTUAL   DC    CL60' '
+
+TESTMSG  DS   0D
+         DC    H'92'
+         DC    H'0'
+         DC    CL5'Test '
+TESTNBR  DS    ZL10
+         DC    CL1' '
+TESTRES  DS    CL10'          '
+         DC    CL2': '
+TESTDESC DS    CL60
+
+         DS   0D
+PASSED   DC    CL10'    PASSED'
+FAILED   DC    CL10'*** FAILED'
+
+         DS   0D
+FAILCNT  DC    PL4'0'
+PASSCNT  DC    PL4'0'
+TOTAL    DC    PL4'0'
+
+MASK     DC    X'4020B6202020B6202120'
+
+TOTLMSG  DS   0D
+         DC    H'28'
+         DC    H'0'
+         DC    CL14'Total tests:  '
+TOTALZ   DS    ZL10
+
+FAILMSG  DS   0D
+         DC    H'28'
+         DC    H'0'
+         DC    CL14'Total failed: '
+FAILCNTZ DS    ZL10
+FAILLEN  EQU    *-FAILMSG
+
+PASSMSG  DS   0D
+         DC    H'29'
+         DC    H'0'
+         DC    CL14'Total passed: '
+PASSCNTZ DS    ZL11
+
+R0       EQU   0
+R1       EQU   1
+R2       EQU   2
+R3       EQU   3
+R4       EQU   4
+R5       EQU   5
+R6       EQU   6
+R7       EQU   7
+R8       EQU   8
+R9       EQU   9
+R10      EQU   10
+R11      EQU   11
+R12      EQU   12
+R13      EQU   13
+R14      EQU   14
+R15      EQU   15
+         END
