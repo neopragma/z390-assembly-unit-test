@@ -1,0 +1,130 @@
+
+*********************************************************************
+* Unit test driver for STRLEN routine.                              *
+*********************************************************************
+         TITLE 'TEST STRLEN ROUTINE'
+
+         COPY TESTMAC
+
+STRLENT  CSECT
+         SAVE  (14,12)
+         BALR  12,0
+         USING *,12
+         ST    R13,SAVREG13
+         LA    R13,SAVEAREA
+
+         WTO   'Starting STRLEN routine tests...'
+         WTO   '*------------------------------*'
+*--------------------------------------------------------------------*
+T1       EQU   *
+         TESTCASE 'It returns length 0 for an empty string',39
+         XC    STRING,STRING
+         XC    RESULT,RESULT
+         CALL  STRLEN,(STRING,RESULT),VL
+         L     R9,RESULT
+         LTR   R9,R9
+         BZ    T1PASS
+         SETVAL RESULT,=C'Not zero',8
+         SETVAL EXPECTED,=C'Zero length',10
+         FAILED
+         B     T2
+T1PASS   EQU   *
+         PASSED
+*--------------------------------------------------------------------*
+T2       EQU   *
+         TESTCASE 'It returns length 9 for AARDVAARK',33
+         SETVAL STRING,=C'AARDVAARK',9
+         XC    RESULT,RESULT
+         LA    R8,9
+         CALL  STRLEN,(STRING,RESULT),VL
+         L     R9,RESULT
+         CR    R9,R8
+         BZ    T2PASS
+         BAS   R10,FORMAT
+         FAILED
+         B     T3
+T2PASS   EQU   *
+         PASSED
+*--------------------------------------------------------------------*
+T3       EQU   *
+         TESTCASE 'It returns length 60 for max length string',42
+         SETVAL STRING,MAXSTR,60
+         XC    RESULT,RESULT
+         LA    R8,60
+         CALL  STRLEN,(STRING,RESULT),VL
+         L     R9,RESULT
+         CR    R9,R8
+         BZ    T3PASS
+         BAS   R10,FORMAT
+         FAILED
+         B     T4
+T3PASS   EQU   *
+         PASSED
+*--------------------------------------------------------------------*
+T4       EQU   *
+         TESTCASE 'It returns length 60 when longer than max',41
+         SETVAL STRING,TOOLONG,65
+         XC    RESULT,RESULT
+         LA    R8,61
+         CALL  STRLEN,(STRING,RESULT),VL
+         L     R9,RESULT
+         CR    R9,R8
+         BZ    T4PASS
+         BAS   R10,FORMAT
+         FAILED
+         B     T5
+T4PASS   EQU   *
+         PASSED
+*--------------------------------------------------------------------*
+T5       EQU   *
+         TESTCASE 'It sets return code 4 when no args are passed',45
+         XR    R1,R1
+         CALL  STRLEN
+         LA    R8,4
+         LR    R9,R15
+         CR    R9,R8
+         BZ    T5PASS
+         BAS   R10,FORMAT
+         FAILED
+         B     ENDOK
+T5PASS   EQU   *
+         PASSED
+*--------------------------------------------------------------------*
+ENDOK    EQU   *
+         STATS
+         L     R13,SAVREG13
+         RETURN (14,12),RC=0
+ABEND08  EQU   *
+         L     R13,SAVREG13
+         RETURN (14,12),RC=8
+
+FORMAT   EQU   *
+         CVD   R9,RESULTP
+         MVC   RESULT,MASK
+         ED    RESULT(16),RESULTP+4
+         CVD   R8,RESULTP
+         MVC   EXPECTED,MASK
+         ED    EXPECTED(16),RESULTP+4
+         BR    R10
+
+
+
+*--------------------------------------------------------------------*
+         DS    0D            
+SAVEAREA EQU   *
+         DC    F'0'
+         DC    F'0'
+SAVREG13 DC    F'0'
+         DC    15F'0'     
+STRING   DS    CL64
+MASK2    DC    X'40202020B6202020B6202020B6202020B6202120'
+RESULT   DS    CL60
+RESULTP  DS    D
+RESULTU  DS    CL16
+TOOLONG  DC    CL1'00'
+MAXSTR   DC    CL30'111111111122222222223333333333'
+         DC    CL30'444444444455555555556666666666'
+         DC    XL1'00000'
+         COPY  TESTDAT
+         COPY  REGEQU
+         END

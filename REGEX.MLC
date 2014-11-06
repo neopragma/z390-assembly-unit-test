@@ -1,34 +1,30 @@
 *********************************************************************
-* Subprogram                                                        *
+* Regular Expression Parser                                         *
 *********************************************************************
-         TITLE 'REGEX PARSER'
+         TITLE 'Regular Expression Parser'
 REGEX    CSECT
          SAVE  (14,12)
          BALR  12,0              
          USING *,12              
          LTR   R1,R1           * Any arguments passed?
-         BZ    NOPARMS
+         BZ    BADARGS
          LR    R2,R1   
-*   
-* Check for equality
-         L     R5,0(,R2)       * Pattern
-         L     R6,4(,R2)       * String
-         L     R7,8(,R2)       * Result
+   
+         L     R3,0(,R2)       * Pattern
+         L     R4,4(,R2)       * String
 
-*         MVC   PARM,=C'Pattern:    '
-*         MVC   STRING,0(R5)
-*         WTO   MF=(E,WTOBLOCK)
-*         MVC   PARM,=C'String:     '
-*         MVC   STRING,0(R6)
-*         WTO   MF=(E,WTOBLOCK)
+         L     R7,MAXLENG
+         L     R5,8(,R2)       * Result
 
-         MVI   0(R7),C' '
-         MVC   1(60,R7),0(R7)
-         CLC   0(60,R5),0(R6)
+         L     R11,MAXLENG     * Clear the result
+         XC    0(R11,R5),0(R5)
+
+* Check for equality - put real regex parsing code here
+         CLC   0(R7,R3),0(R4)
          BNE   NOMATCH
 *         WTO   'REGEX: MATCH'
-         MVC   0(24,R7),0(R6)
-         B     ENDOK
+         MVC   0(24,R5),0(R4)
+         B     NORMLEND
 
 WTOBLOCK DC    H'76'
          DC    H'0'
@@ -38,53 +34,17 @@ STRING   DS    CL60
 *
 NOMATCH EQU   *
 *         WTO   'REGEX: NO MATCH'
-         XC    0(60,R7),0(R7)
+         L     R10,MAXLENG
+         XC    0(R10,R5),0(R5)
 
-ENDOK    EQU   *
+NORMLEND EQU   *
          RETURN (14,12),RC=0
 
-ABEND08  EQU   *
-         WTO   '* REGEX ABENDING...RC=0008'
-         RETURN (14,12),RC=8
-*
-***********************************************************************
-* Post a non-paramter message...
-* RETURN to the CALLING PROGRAM OR OPERATING SYSTEM
-*
-NOPARMS  EQU   *
-         WTO   '* REGEX called with zero parameters'
+BADARGS  EQU   *
+         WTO   '*** REGEX needs 3 args: Pattern, String, Result area'
          RETURN (14,12),RC=4
-*
-***********************************************************************
-* Post a too-many-paramters message...
-* RETURN to the CALLING PROGRAM OR OPERATING SYSTEM
-*
-TOOMANY  EQU   *
-         WTO   '* REGEX called with too many parameters'
-         RETURN (14,12),RC=4
-*
-***********************************************************************
-* Define Constants and EQUates
-*
+
          DS    0F
-*
-* Register EQUates
-*
-R0       EQU   0
-R1       EQU   1
-R2       EQU   2
-R3       EQU   3
-R4       EQU   4
-R5       EQU   5
-R6       EQU   6
-R7       EQU   7
-R8       EQU   8
-R9       EQU   9
-R10      EQU   10
-R11      EQU   11
-R12      EQU   12
-R13      EQU   13
-R14      EQU   14
-R15      EQU   15
-*
+MAXLENG  DC    F'40'
+         COPY  REGEQU
          END

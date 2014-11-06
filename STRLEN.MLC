@@ -1,0 +1,40 @@
+*********************************************************************
+* Find length of zero-delimited string.                             *
+*                                                                   *
+* Arg0 points to the string                                         *
+* Arg1 points to a return area where we put the string length       *
+*********************************************************************
+         TITLE 'Find length of zero-delimited string'
+STRLEN   CSECT
+         SAVE  (14,12)
+         BALR  12,0              
+         USING *,12              
+         LTR   R1,R1       * Any arguments passed?
+         BZ    BADARGS
+         LR    R2,R1   
+         L     R4,0(,R2)   * Ptr to the string
+         L     R7,4(,R2)   * Ptr to string length from this routine
+         LA    R8,1        * Increment value
+         LA    R9,60(R4)   * Last byte to check
+         LR    R5,R4       * Initial index value
+         XR    R10,R10     * Initialize length
+LOOP     EQU   *
+         CLI   0(R5),X'00'  
+         BE    LOOPX
+         AR    R10,R8
+         BXH   R5,R8,LOOPX 
+         B     LOOP
+LOOPX    EQU   *    
+         ST    R10,0(R7)
+         RETURN (14,12),RC=0
+BADARGS  EQU   *
+         WTO   '*** STRLEN needs 2 args: String, Result area'
+         RETURN (14,12),RC=4
+
+RESULTP  DS   PL8
+WTOBLOCK DC    H'20'
+         DC    H'0'
+RESULT   DS    CL60
+         DC    XL1'00'
+         COPY REGEQU                  
+         END

@@ -1,4 +1,12 @@
          MACRO
+         SETVAL &TARG,&VAL,&LEN
+         XC    &TARG,&TARG
+         LA    R2,&TARG
+         LA    R3,&VAL
+         MVC   0(&LEN,R2),0(R3)
+         MEND
+
+         MACRO
          TESTCASE &DESCR,&LEN
          AP    TOTAL,=P'1'
          MVC   TESTNBR,MASK
@@ -7,7 +15,6 @@
          MVC   TESTDESC+1(L'TESTDESC-1),TESTDESC
          MVC   TESTDESC(&LEN),=C&DESCR
          MVC   TESTRES,=C'      '
-         MVC   RESULT,=C'                        '
          MEND
 
          MACRO
