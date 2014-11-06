@@ -1,0 +1,7 @@
+# z390 portable emulator
+*.390
+*.ERR
+*.LOG
+*.LST
+*.OBJ
+*.PRN
