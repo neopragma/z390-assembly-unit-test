@@ -2,13 +2,13 @@
 *********************************************************************
 * Unit test driver for STRLEN routine.                              *
 *********************************************************************
+         AMODE 31
+         RMODE ANY
          TITLE 'TEST STRLEN ROUTINE'
-
          COPY TESTMAC
-
 STRLENT  CSECT
          SAVE  (14,12)
-         BALR  12,0
+         BASR  12,0
          USING *,12
          ST    R13,SAVREG13
          LA    R13,SAVEAREA
@@ -106,9 +106,6 @@ FORMAT   EQU   *
          MVC   EXPECTED,MASK
          ED    EXPECTED(16),RESULTP+4
          BR    R10
-
-
-
 *--------------------------------------------------------------------*
          DS    0D            
 SAVEAREA EQU   *

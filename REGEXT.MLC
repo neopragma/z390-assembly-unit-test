@@ -1,60 +1,160 @@
 
-*********************************************************************
-* Unit test driver for REGEX parser.                                *
-*********************************************************************
+**********************************************************************
+* Unit test driver for REGEX parser.                                 *
+**********************************************************************
+         AMODE 31
+         RMODE ANY
          TITLE 'TEST REGEX PARSER'
-
          COPY TESTMAC
-
 REGEXT   CSECT
          SAVE  (14,12)
-         BALR  12,0
+         BASR  12,0
          USING *,12
          ST    R13,SAVREG13
          LA    R13,SAVEAREA
 
          WTO   'Starting REGEX parser tests...'
          WTO   '*------------------------------*'
-*-------------------------------------------------------------------*
-         TESTCASE 'String not matched',18
 
-         SETVAL PATTERN,=C'test value',10
-         SETVAL STRING,=C'aardvaark',9
-         SETVAL EXPECTED,=C' ',1
+*        B T7
+
+*--------------------------------------------------------------------*
+T1       EQU   *
+         TESTCASE 'It finds ''def'' in ''abcdefghi''',29
+
+         SETVAL PATTERN,=C'def',3
+         SETVAL STRING,=C'abcdefghi',9
+         SETVAL EXPECTED,=C'def',3
 
          CALL  REGEX,(PATTERN,STRING,RESULT),VL
 
-         CLI   RESULT,X'00'
+         CLC   RESULT(3),EXPECTED
          BE    T1PASS
          FAILED
          B     T2
 T1PASS   EQU   *
          PASSED
-*-------------------------------------------------------------------*
+*--------------------------------------------------------------------*
 T2       EQU   *
-         TESTCASE 'Exact string match',18
+         TESTCASE 'Return code is 0 when string is matched',39
 
-         SETVAL PATTERN,=C'test value',10
-         SETVAL STRING,=C'test value',10
-         SETVAL EXPECTED,=C'test value',10
+         SETVAL PATTERN,=C'def',3
+         SETVAL STRING,=C'abcdefghi',9
+         SETVAL EXPECTED,=C'def',3
 
          CALL  REGEX,(PATTERN,STRING,RESULT),VL
 
-         CLC   RESULT(10),EXPECTED
-         BE    T2PASS
+         LTR   R15,R15
+         BZ    T2PASS
+         LR    R9,R15
+         XR    R8,R8
+         BAS   R10,FORMAT
          FAILED
-         B     ENDOK
+         B     NORMLEND
 T2PASS   EQU   *
          PASSED
-*---------------------------------------------------------------------*
-ENDOK    EQU   *
+*--------------------------------------------------------------------*
+T3       EQU   *
+         TESTCASE 'It does not find ''xyz'' in ''abcdefghi''',29
+
+         SETVAL PATTERN,=C'xyz',3
+         SETVAL STRING,=C'abcdefghi',9
+         XC    EXPECTED,EXPECTED
+
+         CALL  REGEX,(PATTERN,STRING,RESULT),VL
+
+         CLI   RESULT,X'00'
+         BE    T3PASS
+         FAILED
+         B     T4
+T3PASS   EQU   *
+         PASSED
+*--------------------------------------------------------------------*
+T4       EQU   *
+         TESTCASE 'Return code is 4 when string is not matched',43
+
+         SETVAL PATTERN,=C'xyz',3
+         SETVAL STRING,=C'abcdefghi',9
+         XC    EXPECTED,EXPECTED
+
+         CALL  REGEX,(PATTERN,STRING,RESULT),VL
+
+         C     R15,NOMATCH
+         BZ    T4PASS
+         LR    R9,R15
+         XR    R8,R8
+         BAS   R10,FORMAT
+         FAILED
+         B     T5
+T4PASS   EQU   *
+         PASSED
+*--------------------------------------------------------------------*
+T5       EQU   *
+         TESTCASE '''^abc'' matches ''abc'' in ''abcdefghi''',41
+
+         SETVAL PATTERN,=C'^abc',4
+         SETVAL STRING,=C'abcdefghi',9
+         SETVAL EXPECTED,=C'abc',3
+
+         CALL  REGEX,(PATTERN,STRING,RESULT),VL
+
+         CLC   RESULT(3),EXPECTED
+         BE    T5PASS
+         FAILED
+         B     T6
+T5PASS   EQU   *
+         PASSED
+*--------------------------------------------------------------------*
+T6       EQU   *
+         TESTCASE '''d.h'' matches ''defgh'' in ''abcdefghi''',42
+
+         SETVAL PATTERN,=C'd.h',3
+         SETVAL STRING,=C'abcdefghi',9
+         SETVAL EXPECTED,=C'defgh',5
+
+         CALL  REGEX,(PATTERN,STRING,RESULT),VL
+
+         CLC   RESULT(3),EXPECTED
+         BE    T6PASS
+         FAILED
+         B     T7
+T6PASS   EQU   *
+         PASSED
+*--------------------------------------------------------------------*
+T7       EQU   *
+         TESTCASE '''f.i'' matches ''fghi'' in ''abcdefghi''',35
+
+         SETVAL PATTERN,=C'f.i',3
+         SETVAL STRING,=C'abcdefghi',9
+         SETVAL EXPECTED,=C'fghi',4
+
+         CALL  REGEX,(PATTERN,STRING,RESULT),VL
+
+         CLC   RESULT(3),EXPECTED
+         BE    T7PASS
+         FAILED
+         B     NORMLEND
+T7PASS   EQU   *
+         PASSED
+*--------------------------------------------------------------------*
+NORMLEND  EQU   *
          STATS
          L     R13,SAVREG13
          RETURN (14,12),RC=0
 ABEND08  EQU   *
          L     R13,SAVREG13
          RETURN (14,12),RC=8
-*---------------------------------------------------------------------*
+
+* Convert register contents to display format for 'fail' messages.
+FORMAT   EQU   *
+         CVD   R9,RESULTP
+         MVC   RESULT,MASK
+         ED    RESULT(16),RESULTP+4
+         CVD   R8,RESULTP
+         MVC   EXPECTED,MASK
+         ED    EXPECTED(16),RESULTP+4
+         BR    R10         
+
          DS    0D            
 SAVEAREA EQU   *
          DC    F'0'
@@ -62,10 +162,12 @@ SAVEAREA EQU   *
 SAVREG13 DC    F'0'
          DC    15F'0'     
 
-PATTERN  DS    CL60
-STRING   DS    CL60
-RESULT   DS    CL60         
-
+PATTERN  DS    CL64
+STRING   DS    CL64
+RESULT   DS    CL64
+RESULTP  DS    D
+RESULTU  DS    CL16
+NOMATCH  DC    F'4'
          COPY  TESTDAT
          COPY  REGEQU
          END

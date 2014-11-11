@@ -7,21 +7,21 @@ WTOTEXT  DC    CL76' '
 
 EXPMSG   DS   0D
          DC    CL11' Expected: '
-EXPECTED DC    CL60' '
+EXPECTED DC    CL64' '
 
 ACTMSG   DS   0D
          DC    CL11'   Actual: '
-ACTUAL   DC    CL60' '
+ACTUAL   DC    CL64' '
 
 TESTMSG  DS   0D
-         DC    H'92'
+         DC    H'96'
          DC    H'0'
          DC    CL5'Test '
 TESTNBR  DS    ZL10
          DC    CL1' '
 TESTRES  DS    CL10'          '
          DC    CL2': '
-TESTDESC DS    CL60
+TESTDESC DS    CL64
 
          DS   0D
 PASSED   DC    CL10'    PASSED'

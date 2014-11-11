@@ -4,10 +4,12 @@
 * Arg0 points to the string                                         *
 * Arg1 points to a return area where we put the string length       *
 *********************************************************************
+         AMODE 31
+         RMODE ANY
          TITLE 'Find length of zero-delimited string'
 STRLEN   CSECT
          SAVE  (14,12)
-         BALR  12,0              
+         BASR  12,0              
          USING *,12              
          LTR   R1,R1       * Any arguments passed?
          BZ    BADARGS
@@ -15,7 +17,7 @@ STRLEN   CSECT
          L     R4,0(,R2)   * Ptr to the string
          L     R7,4(,R2)   * Ptr to string length from this routine
          LA    R8,1        * Increment value
-         LA    R9,60(R4)   * Last byte to check
+         LA    R9,64(R4)   * Last byte to check
          LR    R5,R4       * Initial index value
          XR    R10,R10     * Initialize length
 LOOP     EQU   *
@@ -32,9 +34,9 @@ BADARGS  EQU   *
          RETURN (14,12),RC=4
 
 RESULTP  DS   PL8
-WTOBLOCK DC    H'20'
+WTOBLOCK DC    H'68'
          DC    H'0'
-RESULT   DS    CL60
+RESULT   DS    CL64
          DC    XL1'00'
          COPY REGEQU                  
          END

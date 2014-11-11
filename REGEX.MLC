@@ -1,50 +1,132 @@
-*********************************************************************
-* Regular Expression Parser                                         *
-*********************************************************************
+**********************************************************************
+* Regular Expression Parser                                          *         
+*                                                                    *
+* R1 Parameter list address                                          *
+* R2 Parameter list                                                  *
+* R3                                                                 *
+* R4 Pointer to the regex pattern                                    *
+* R5 Pointer to the text (string)                                    *
+* R6                                                                 *
+* R7                                                                 *
+* R8 Increment value                                                 *
+* R9 Pointer to the result (captured text)                           *
+* R10 Subroutine return address                                      *
+* R11                                                                *
+* R12 Base register                                                  *
+* R13 Pointer to register save area                                  *
+* R14 Return address (to caller)                                     *
+* R1R Retur code (to caller)                                         *
+**********************************************************************
+         MACRO
+         SETVAL &TARG,&VAL,&LEN
+         XC    &TARG,&TARG
+         LA    R2,&TARG
+         LA    R3,&VAL
+         MVC   0(&LEN,R2),0(R3)
+         MEND
+
+         AMODE 31
+         RMODE ANY
          TITLE 'Regular Expression Parser'
 REGEX    CSECT
          SAVE  (14,12)
-         BALR  12,0              
+         BASR  12,0              
          USING *,12              
-         LTR   R1,R1           * Any arguments passed?
+         LTR   R1,R1                * Any arguments passed?
          BZ    BADARGS
          LR    R2,R1   
    
-         L     R3,0(,R2)       * Pattern
-         L     R4,4(,R2)       * String
+         L     R4,0(,R2)            * Pattern
+         L     R5,4(,R2)            * String
+         L     R9,8(,R2)            * Result area
+         XC    0(MAXLENG,R9),0(R9)  * Clear the result area
+         LA    R8,1                 * Increment through strings
+         XR    R6,R6                * Start of matching text
+         XR    R7,R7                * End of matching text
+         MVI   ANCHOR,X'00'
+         MVI   ENDCHAR,X'00'
 
-         L     R7,MAXLENG
-         L     R5,8(,R2)       * Result
+         CLI   0(R4),C'^'           * Anchored to start of text?
+         BNE   MAINLOOP
+         OI    ANCHOR,X'01'         * Don't scan through the text
+         AR    R4,R8                * Skip the caret
 
-         L     R11,MAXLENG     * Clear the result
-         XC    0(R11,R5),0(R5)
+MAINLOOP EQU   *
+         CLI   0(R4),X'00'
+         BE    MATCHED
+         BAS   R10,NEXT
+         LTR   R15,R15
+         BNE   NOTMATCHED
+         AR    R4,R8
+         B     MAINLOOP
 
-* Check for equality - put real regex parsing code here
-         CLC   0(R7,R3),0(R4)
-         BNE   NOMATCH
-*         WTO   'REGEX: MATCH'
-         MVC   0(24,R5),0(R4)
+NEXT     EQU   *
+         CLI   0(R5),X'00'
+         BE    NOMATCH
+         CLI   0(R4),X'00'
+         BE    MATCH
+         CLI   0(R4),C'.'        * Wildcard?
+         BNE   CMPVALUE          * No, skip this bit
+         CLC   1(1,R4),0(R5)     * Match character after wildcard?
+         BE    BUMPREGEX
+         BAS   R11,SAVECHAR
+         B     BUMPTEXT         
+CMPVALUE EQU   *
+         CLC   0(1,R4),0(R5)
+         BE    SAVEIT
+         TM    ANCHOR,X'01'   * Anchored to start of text?
+         BNO   BUMPTEXT
+         B     NOMATCH        * Then stop looking
+SAVEIT EQU  *    
+         BAS   R11,SAVECHAR
+BUMPREGEX EQU  * 
+         MVI   ENDCHAR,X'00'  * (brute force!)    
+         AR    R4,R8
+BUMPTEXT EQU   *
+         AR    R5,R8
+         B     NEXT
+MATCH    EQU   *
+         XR    R15,R15
+         BR    R10
+NOMATCH  EQU   *
+         LA    R15,4
+         BR    R10         
+
+SAVECHAR EQU   *
+         MVC   0(1,R9),0(R5)
+         AR    R9,R8
+         BR    R11
+
+
+MATCHED  EQU   *
+         XR    R15,R15
          B     NORMLEND
-
-WTOBLOCK DC    H'76'
-         DC    H'0'
-PARM     DS    CL12
-STRING   DS    CL60
-
-*
-NOMATCH EQU   *
-*         WTO   'REGEX: NO MATCH'
+NOTMATCHED EQU    *
+         LA    R15,RCNOMATCH
          L     R10,MAXLENG
-         XC    0(R10,R5),0(R5)
+         XC    0(R10,R9),0(R9)
 
 NORMLEND EQU   *
-         RETURN (14,12),RC=0
+         RETURN (14,12),RC=(R15)
 
 BADARGS  EQU   *
          WTO   '*** REGEX needs 3 args: Pattern, String, Result area'
          RETURN (14,12),RC=4
 
-         DS    0F
-MAXLENG  DC    F'40'
+
+ANCHOR   DC    XL1'00'
+ENDCHAR  DC    XL1'00'
+MAXLENG     EQU 64
+RCNOMATCH   EQU 4
          COPY  REGEQU
+
+
+* temp
+         DS    0D
+WTOBLOCK DC    H'80'
+         DC    H'0'
+PARM     DS    CL12
+PATTERN  DS    CL64
+STRING   DS    CL64
+
          END
