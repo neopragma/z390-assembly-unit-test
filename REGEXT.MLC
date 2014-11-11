@@ -15,9 +15,6 @@ REGEXT   CSECT
 
          WTO   'Starting REGEX parser tests...'
          WTO   '*------------------------------*'
-
-*        B T7
-
 *--------------------------------------------------------------------*
 T1       EQU   *
          TESTCASE 'It finds ''def'' in ''abcdefghi''',29

@@ -41,8 +41,6 @@ REGEX    CSECT
          L     R9,8(,R2)            * Result area
          XC    0(MAXLENG,R9),0(R9)  * Clear the result area
          LA    R8,1                 * Increment through strings
-         XR    R6,R6                * Start of matching text
-         XR    R7,R7                * End of matching text
          MVI   ANCHOR,X'00'
          MVI   ENDCHAR,X'00'
 
